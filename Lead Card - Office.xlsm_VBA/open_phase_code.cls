@@ -2,7 +2,7 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "ThisWorkbook"
+Attribute VB_Name = "open_phase_code"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
@@ -14,27 +14,6 @@ Private Enum state
 End Enum
 
 Private Const pw = ""
-    
-Private Sub Workbook_Open()
-    Application.DisplayAlerts = False
-    Application.ScreenUpdating = False
-    Dim rng As Range
-    Dim ws As Worksheet
-    Dim xFile As String
-    Set ws = ThisWorkbook.Worksheets("Open Phase Codes")
-    ws.Unprotect
-    If DateDiff("h", Me.Worksheets("instructions").Range("updated"), Now()) > 1 Then
-        xFile = Me.Path & "\" & Me.name
-        SetAttr xFile, vbNormal
-        update_phase_code
-        Set rng = ws.ListObjects("phase_list").DataBodyRange(ws.ListObjects("phase_list").DataBodyRange.Rows.Count, 1)
-        resize_name_range "open_codes", ws, ws.ListObjects("phase_list").DataBodyRange(1, 1).Offset(0, 2), rng.Offset(0, 2)
-        Me.SaveAs xFile
-        Application.DisplayAlerts = True
-        Application.ScreenUpdating = True
-    End If
-    ws.Protect
-End Sub
 
 Public Sub close_phase_code()
 Attribute close_phase_code.VB_Description = "Close phase code and delete it from the list\n"
@@ -117,7 +96,7 @@ Attribute update_phase_code.VB_ProcData.VB_Invoke_Func = "U\n14"
     For i = 0 To 4
         ws.ListObjects("phase_list").ListRows.Add
         For p = 1 To 2
-            With ws.ListObjects("phase_list").Range(ws.ListObjects("phase_list").ListRows.Count + 1, p)
+            With ws.ListObjects("phase_list").Range(ws.ListObjects("phase_list").ListRows.count + 1, p)
                 .Borders(xlEdgeBottom).LineStyle = xlContinuous
                 .Borders(xlEdgeBottom).Weight = xlThin
                 .Borders(xlEdgeTop).LineStyle = xlContinuous
@@ -141,11 +120,6 @@ Attribute update_phase_code.VB_ProcData.VB_Invoke_Func = "U\n14"
 '    Next i
 '    resize_name_range "open_codes", ws, ws.Range("C2"), rng.Offset(0, 2)
     Workbooks("Labor Report.xlsx").Close
-    With Me.Worksheets("Instructions")
-        .Unprotect
-        .Range("updated") = Now()
-        .Protect
-    End With
     Application.ScreenUpdating = True
     ws.Protect pw
     Exit Sub
@@ -154,7 +128,7 @@ Attribute update_phase_code.VB_ProcData.VB_Invoke_Func = "U\n14"
     With Application.FileDialog(msoFileDialogOpen)
         .Title = "Select Labor Report"
         .Filters.Add "Excel Files", "*.xls*", 1
-        .InitialFileName = Me.Path & "\"
+        .InitialFileName = ActiveWorkbook.path & "\"
         ans = .Show
         If ans = 0 Then
             Exit Sub
@@ -266,8 +240,9 @@ Private Function get_code(state As Integer, Optional cnt As Integer = 1) As Doub
     End Select
     Exit Function
 30:
-    xlFile = ThisWorkbook.Path & "\Labor Report.xlsx"
+    xlFile = ThisWorkbook.path & "\Labor Report.xlsx"
     Workbooks.Open xlFile
+    Stop
     Set mb = Workbooks("Labor Report.xlsx")
     Resume Next
 End Function
@@ -312,7 +287,7 @@ Private Function get_description(state As Integer, Optional cnt As Integer = 1) 
     End Select
     Exit Function
 10:
-    xlFile = ThisWorkbook.Path & "\Labor Report.xlsx"
+    xlFile = ThisWorkbook.path & "\Labor Report.xlsx"
     Workbooks.Open xlFile
     Set mb = Workbooks("Labor Report.xlsx")
     Resume Next
@@ -325,7 +300,7 @@ Private Function insert_code(code As Double, desc As String) As Integer
     Dim ws As Worksheet
     Dim rng As Range
     Set wb = ThisWorkbook
-    Set ws = ActiveSheet
+    Set ws = wb.Worksheets("Open Phase Codes")
 '    Stop
     For Each rng In ws.ListObjects("phase_list").ListColumns(1).DataBodyRange 'ws.Range("A2", ws.Range("A1").End(xlDown))
         If rng.Value = code Then
